@@ -75,7 +75,10 @@ class VcentTools(object):
             print e
 
         # 通过名称获取vm的实例
-        vm = server_obj.get_vm_by_name(vm_name)
+        try:
+            vm = server_obj.get_vm_by_name(vm_name)
+        except Exception as e:
+            return 0
         if vm.is_powered_off() == False:
             try:
                 vm.reset()
@@ -86,7 +89,7 @@ class VcentTools(object):
                 print u'重置完成'
                 server_obj.disconnect()
 
-                return
+                return 1
             except Exception as e:
                 print e
 
@@ -96,7 +99,7 @@ class VcentTools(object):
             vm.power_on()
             print u'虚拟机%s 正在开机中。。。。' % (vm_name)
             server_obj.disconnect()
-            return 0
+            return 2
 
 
         
@@ -151,7 +154,10 @@ if __name__ == '__main__':
     # print type(cf.get('vc','vc_ip'))
     # 连接vsphere
     # print cf.get('vc','vc_ip'),cf.get('vc','vc_acount'),cf.get('vc','vc_pwd')
-    obj = VcentTools(cf.get('vc','vc_ip'), cf.get('vc','vc_acount'), cf.get('vc','vc_pwd'))
+    obj1 = VcentTools(cf.get('vc1','vc_ip'), cf.get('vc1','vc_acount'), cf.get('vc1','vc_pwd'))
+    obj2 = VcentTools(cf.get('vc2', 'vc_ip'), cf.get('vc2', 'vc_acount'), cf.get('vc2', 'vc_pwd'))
+    obj3 = VcentTools(cf.get('vc3', 'vc_ip'), cf.get('vc3', 'vc_acount'), cf.get('vc3', 'vc_pwd'))
+    obj4 = VcentTools(cf.get('vc4', 'vc_ip'), cf.get('vc4', 'vc_acount'), cf.get('vc4', 'vc_pwd'))
     # obj = VcentTools('10.22.14.130', 'administrator@vsphere.local', '1qaz@WSX')
     # print obj.host_ip,obj.password,obj.user,obj.esxi_version()
     #查询教室虚拟机
@@ -182,24 +188,32 @@ if __name__ == '__main__':
 
         if datetime.datetime.now().strftime('%H:%M') == cf.get('vm_retime','set_retime'):
             for vmname in p.get_vmname(query_vm):
-                obj.vmaction(vmname,cf.get('vm_hz','vm_hz'))
+                if obj1.vmaction(vmname,cf.get('vm_hz','vm_hz')) == 0:
+                    print 'is not exsit %s' %(cf.get('vc1','vc_ip'))
+                if obj2.vmaction(vmname, cf.get('vm_hz', 'vm_hz')) == 0:
+                    print 'is not exsit %s' % (cf.get('vc2', 'vc_ip'))
+                if obj3.vmaction(vmname, cf.get('vm_hz', 'vm_hz')) == 0:
+                    print 'is not exsit %s' % (cf.get('vc3', 'vc_ip'))
+                if obj4.vmaction(vmname, cf.get('vm_hz', 'vm_hz')) == 0:
+                    print 'is not exsit %s' % (cf.get('vc4', 'vc_ip'))
+
                 logger.info(u'正在重置%s' %(vmname))
                 # time.sleep(10)
         nowdate = datetime.datetime.now().strftime
         logger.info(u'现在时间%s,还未到才重置时间%s 请等待重置' %(now_date,cf.get('vm_retime','set_retime')))
         #检查是否有关机的虚拟机
-        for  vmname in p.get_vmname(query_vm):
-            # t = datetime.datetime.now().strftime('%H:%M')
-
-            if datetime.datetime.now().strftime('%H:%M') == cf.get('vm_retime','set_retime'):
-                for vmname in p.get_vmname(query_vm):
-                    obj.vmaction(vmname,cf.get('vm_hz','vm_hz'))
-                    logger.info(u'正在重置%s' % (vmname))
-                    # time.sleep(10)
-            if obj.vm_status(vmname) == 0:
-                obj.vmaction(vmname)
-                logger.info(u'%s已经关机。。。。' %(vmname))
-            else:
-                logger.info(u'虚拟机%s正在运行,未到重置时间：%s'%(vmname,unicode(cf.get('vm_retime','set_retime'))))
+        # for  vmname in p.get_vmname(query_vm):
+        #     # t = datetime.datetime.now().strftime('%H:%M')
+        #
+        #     if datetime.datetime.now().strftime('%H:%M') == cf.get('vm_retime','set_retime'):
+        #         for vmname in p.get_vmname(query_vm):
+        #             obj.vmaction(vmname,cf.get('vm_hz','vm_hz'))
+        #             logger.info(u'正在重置%s' % (vmname))
+        #             # time.sleep(10)
+        #     if obj.vm_status(vmname) == 0:
+        #         obj.vmaction(vmname,cf.get('vm_hz','vm_hz'))
+        #         logger.info(u'%s已经关机。。。。' %(vmname))
+        #     else:
+        #         logger.info(u'虚拟机%s正在运行,未到重置时间：%s'%(vmname,unicode(cf.get('vm_retime','set_retime'))))
 
         time.sleep(1)
