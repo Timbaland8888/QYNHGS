@@ -1,3 +1,9 @@
+#!/usr/bin/evn python
+# -*- encoding:utf-8 -*-
+# function: connect exsi server api  for restart vm
+# date:2020-06-09
+# Arthor:Timbaland
+
 from tkinter import *
 from tkinter import ttk
 from tkinter.messagebox import  showwarning
