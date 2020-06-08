@@ -3,6 +3,9 @@
 #function: connect exsi server api  for restart vm
 #date:2018-12-14
 #Arthor:Timbaland
+"""
+基于python2.7版本
+"""
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -149,7 +152,7 @@ class  Class_VM(object):
 if __name__ == '__main__':
     cf = ConfigParser.ConfigParser()
     # cf.read('config.ini',encoding="utf-8")
-    cf.readfp(codecs.open('config.ini',"r","utf-8-sig"))
+    cf.readfp(codecs.open('config.ini', "r", "utf-8-sig"))
     # print cf.get('vm_retime','set_retime')
     # print type(cf.get('vc','vc_ip'))
     # 连接vsphere
