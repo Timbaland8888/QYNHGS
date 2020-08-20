@@ -14,10 +14,12 @@ import codecs
 import time
 import requests
 import ctypes
-requests.packages.urllib3.disable_warnings()
+import progressbar
+from  vrm_volume import VrmVolume
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
-import progressbar
+requests.packages.urllib3.disable_warnings()
+
 _Arthur_ = 'Timbaland'
 # 全局取消证书验证,忽略连接VSPHERE时提示证书验证
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -104,22 +106,9 @@ class Class_VM(object):
         def vmaction():
 
             index_head = {"Accept": "application/json;version=6.5;charset=UTF-8",
-                          "Accept-Encoding": "gzip, deflate, br",
-                          "Accept-Language": "zh-CN",
-                          "Connection": "keep-alive",
-                          "Content-Length": "115",
                           "Content-Type": "application/json; charset=UTF-8",
-                          # "Cookie": "JSESSIONID=9AD5FD3003274BB97753DCE2CD02E4F9"
-                          # "CSRF-HW": "null"
                           "Host": "10.10.20.10:8443",
-                          "Origin": "https://10.10.20.10:8443",
-                          "Referer": "https://10.10.20.10:8443/OmsPortal/index.html",
-                          "Sec-Fetch-Dest": "empty",
-                          "Sec-Fetch-Mode": "cors",
-                          "Sec-Fetch-Site": "same-origin",
-                          'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36',
-                          # "User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36",
-                          "X-Requested-With": "XMLHttpRequest"
+                          "Origin": "https://10.10.20.10:8443"
                           }
             index_url = "https://10.10.20.10:8443/service/login/form"
             s = requests.Session()  # 为了保存登入信息
@@ -138,35 +127,26 @@ class Class_VM(object):
 
             csfr_token = r.text.split(',')[0].split(':')[1].split('"')[1]
             # print(cookie_key, cookie_value, csfr_token)
-            for vmname in self.get_vmname(query_vm):
-                payloadHeader = {'Accept': 'application/json;version=6.5;charset=UTF-8',
-                                 'Accept-Encoding': 'gzip, deflate, br',
-                                 'Accept-Language': 'zh-CN',
-                                 'Connection': 'keep-alive',
-                                 'Content-Length': '16',
-                                 'Content-Type': 'application/json; charset=UTF-8',
-                                 'Cookie': f'{cookie_key}={cookie_value}',
-                                 'CSRF-HW': f'{csfr_token}',
-                                 'Host': '10.10.20.10:8443',
-                                 'Origin': 'https://10.10.20.10:8443',
-                                 'Referer': 'https://10.10.20.10:8443/OmsPortal/index.html',
-                                 'Sec-Fetch-Dest': 'empty',
-                                 'Sec-Fetch-Mode': 'cors',
-                                 'Sec-Fetch-Site': 'same-origin',
-                                 # 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36',
-                                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36',
-                                 'X-Requested-With': 'XMLHttpRequest'
-                                 }
-                # print(payloadHeader)
 
-                PayloadData = {'mode': "force"}
-                postUrl = f'https://10.10.20.10:8443/service/sites/39A107AF/vms/{vmname[0]}/action/reboot'
-                print(postUrl)
-                m = s.post(postUrl, data=json.dumps(PayloadData), headers=payloadHeader, verify=False)
-                print(m.text)
-                # for hz in range(1, int(cf.get('vm_hz', 'vm_hz'))):
-                #     Class_VM.printDarkBlue(f'正在重置虚拟机ID:{vmname[0]} <<<<===========>>>> 虚拟机名称:{vmname[1]} \n', Class_VM.FOREGROUND_GREEN)
-                #     time.sleep(1)
+            for vmname in self.get_vmname(query_vm):
+                s1 = VrmVolume(vmname[0], vmname[1])
+                s1.entyvolume()
+                # payloadHeader = {'Accept': 'application/json;version=6.5;charset=UTF-8',
+                #                  'Content-Type': 'application/json; charset=UTF-8',
+                #                  'Cookie': f'{cookie_key}={cookie_value}',
+                #                  'CSRF-HW': f'{csfr_token}',
+                #                  'Host': '10.10.20.10:8443'
+                #                  }
+                # # print(payloadHeader)
+                #
+                # PayloadData = {'mode': "force"}
+                # postUrl = f'https://10.10.20.10:8443/service/sites/39A107AF/vms/{vmname[0]}/action/reboot'
+                # print(postUrl)
+                # m = s.post(postUrl, data=json.dumps(PayloadData), headers=payloadHeader, verify=False)
+                # print(m.text)
+                # # for hz in range(1, int(cf.get('vm_hz', 'vm_hz'))):
+                # #     Class_VM.printDarkBlue(f'正在重置虚拟机ID:{vmname[0]} <<<<===========>>>> 虚拟机名称:{vmname[1]} \n', Class_VM.FOREGROUND_GREEN)
+                # #     time.sleep(1)
                 Class_VM.printDarkBlue(f'正在重置虚拟机ID:{vmname[0]} <<<<===========>>>> 虚拟机名称:{vmname[1]} \n',
                                        Class_VM.FOREGROUND_GREEN)
                 Class_VM.vm_progess(vmname[1],int(cf.get('vm_hz', 'vm_hz')))

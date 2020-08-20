@@ -1,9 +1,12 @@
 #!/usr/bin/evn python
-# -*- encoding:utf-8 -*-
-# function: connect exsi server api  for restart vm
-# date:2020-06-09
-# Arthor:Timbaland
+# -*- coding: UTF-8 -*-
+# * Created by .Timbaland
+# * Date: 2020/8/120
+# * Time: 下午 2:32
+# * Project: classroom
+# * Power:
 
+import time
 from tkinter import *
 from tkinter import ttk
 from tkinter.messagebox import  showwarning
@@ -12,6 +15,9 @@ import ctypes,sys
 import configparser
 import codecs
 from vmtools import Class_VM
+
+from vrm_volume import VrmVolume
+
 
 class Wroot():
 
@@ -59,48 +65,56 @@ class Wroot():
             r2.config(bg='red')  # 让对象l显示括号里的内容
             show_help.config(text='提示:  ' + var.get(),fg='blue')
             r1.config(bg='#C0FF3E')
-            showwarning('警告','暂时不开放清空数据盘')
+            # showwarning('警告','暂时不开放清空数据盘')
         def run():  # 处理事件，*args表示可变参数
 
             # os.system(r'wscript .\rename.vbs %s\%s' % (sharedir, sname))
             # print(comboxlist.get())  # 打印选中的值
-            # classroom = comboxlist.get()
-            # # classroom = 'c406-1 -->WIN7406'
-            # classroom = classroom.split('-->')[0].strip()
-
-
+            classroom = comboxlist.get()
+            # classroom = 'c406-1 -->WIN7406'
+            classroom = classroom.split('-->')[0].strip()
+            # print(type(classroom))
+            cf = configparser.ConfigParser()
+            cf.read_file(codecs.open('config.ini', "r", "utf-8-sig"))
+            p = Class_VM(cf.get('hj_db', 'db_host'), cf.get('hj_db', 'db_user'), cf.get('hj_db', 'db_pwd'),
+                         cf.getint('hj_db', 'db_port'), cf.get('hj_db', 'db'), 'utf8')
+            #查询对应虚拟机
+            query_vm =f""" SELECT
+                                vm.vm_name,vm.vm_id
+                            FROM
+                                hj_dg dg
+                            INNER JOIN hj_vm vm ON vm.dg_id = dg.id
+                            WHERE
+                                dg.dg_name ='{classroom}' """
+            # print(query_vm)
             #判断是该重置虚拟机还是清空数据盘
             if var.get() == '定时重置所有教室桌面' :
                 root.withdraw()
-                cf = configparser.ConfigParser()
-                cf.read_file(codecs.open('config.ini', "r", "utf-8-sig"))
-                p = Class_VM(cf.get('hj_db', 'db_host'), cf.get('hj_db', 'db_user'), cf.get('hj_db', 'db_pwd'),
-                             cf.getint('hj_db', 'db_port'), cf.get('hj_db', 'db'), 'utf8')
                 p.vm_rboot()
                 # button_yes.destroy()
 
+            elif var.get() == "清空虚拟机数据盘":
+                # root.withdraw()
+                button_yes.destroy()
+                for vm in p.get_vmname(query_vm):
+                    root.destroy()
+                    root.quit()
+                    # print(cf.get('gust_vm','guster_user'),cf.get('gust_vm','guster_pwd'),cf.get('disk_path','disk_path'))
+                    f = VrmVolume(vm[1], vm[0])
+                    f.entyvolume()
+                    # show_help.config.ini(text=f'正在清理虚拟机{vm[0]}数据盘', fg='blue')
+                    # show_help.update()
+                    # time.sleep(1)
+                    # show_help.config.ini(text=f'清理虚拟机{vm[0]}完毕！！！！', fg='blue')
+                    # show_help.update()
+
+            else:
+                showwarning('警告','未选择任何功能')
+            root.withdraw()
+            p.vm_rboot()
 
 
 
-
-            # elif var.get() == "清空虚拟机数据盘":
-            #     # root.withdraw()
-            #     button_yes.destroy()
-            #     for vmname in p.get_vmname(query_vm):
-            #         obj1.del_datas(vmname,cf.get('gust_vm','guster_user'),cf.get('gust_vm','guster_pwd'),cf.get('disk_path','disk_path'))
-            #
-            #         # print(cf.get('gust_vm','guster_user'),cf.get('gust_vm','guster_pwd'),cf.get('disk_path','disk_path'))
-            #         logger.info(f'正在清理{vmname}数据盘')
-            #         show_help.config(text=f'正在清理虚拟机{vmname}数据盘', fg='blue')
-            #         show_help.update()
-            #         time.sleep(1)
-            #         show_help.config(text=f'清理虚拟机{vmname}完毕！！！！', fg='blue')
-            #         show_help.update()
-            # else:
-            #     showwarning('警告','未选择任何功能')
-
-            root.destroy()
-            root.quit()
         root = Tk()
         root.title(self.title)
         root.iconbitmap(self.pic)
@@ -118,15 +132,26 @@ class Wroot():
         cf.read_file(codecs.open('config.ini', "r", "utf-8-sig"))
         l = Con_mysql(cf.get('hj_db', 'db_host'), cf.get('hj_db', 'db_user'), cf.get('hj_db', 'db_pwd'),
                       cf.get('hj_db', 'db'))
-        listroom = l.query("""select DISTINCT CONCAT(a.dg_name,' -->',template_name)
-                                from  hj_dg a
-                                INNER JOIN hj_vm b on a.id = b.dg_id
-                                INNER JOIN hj_template c on c.id = b.template_id""")
+        listroom = l.query("""SELECT DISTINCT
+                                CONCAT(
+                                    a.dg_name,
+                                    ' -->',
+                                    template_name
+                                )
+                            FROM
+                                hj_dg a
+                            INNER JOIN hj_vm b ON a.id = b.dg_id
+                            INNER JOIN hj_template c ON c.id = b.template_id
+                            WHERE
+                                a.id NOT IN (
+                                    "ff80808171a5a1760171a5a1de330000"
+                                )
+                                                            """)
         newlistroom = []
         for i in listroom:
             newlistroom.append(i[0])
         comboxlist["values"] = newlistroom
-        comboxlist.current(2)  # 选择第一个
+        comboxlist.current(1)  # 选择第一个
         comboxlist.bind("<<ComboboxSelected>>", )  # 绑定事件,(下拉列表框被选中时，绑定go()函数)
         comboxlist.place(x=60, y=40)
         var = StringVar()
